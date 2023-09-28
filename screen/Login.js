@@ -1,29 +1,88 @@
-import React, {useState} from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     Text,
     View,
     StyleSheet,
-    Button,
     Alert,
     TextInput,
-    ScrollView,
+    TouchableOpacity,
     Pressable
 } from 'react-native';
-import { useCallback } from 'react';
 import { useFonts } from 'expo-font';
-
 import Constants from 'expo-constants';
-
 import Dashboard from "./Dashboard";
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 //import Stack Navigator
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as SQLite from 'expo-sqlite';
+const db = SQLite.openDatabase('db.sqlite');
 
-function Logins({ navigation }) {
-    const Stack = createNativeStackNavigator();
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+const Logins = (props) => {
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    var masterUsername = 'admin';
+    var masterPassword = 'admin';
+
+    useEffect(() => {
+        const initiate = async () => { };
+        initiate();
+        db.transaction((tx) => {
+            tx.executeSql(
+                'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT,password TEXT)'
+            );
+        });
+    }, []);
+
+    const login = async () => {
+        if (username == "") {
+            alert('Harap isi username');
+        } 
+        else {
+            if (password == "") {
+                alert('Harap isi password');
+            } else {
+                db.transaction((tx) => {
+                    tx.executeSql('SELECT * FROM users', [], (_, { rows }) => {
+                        const usernameDb = rows.item(0).name;
+                        const usernamePw = rows.item(0).password;
+                        if (username == usernameDb) {
+                            if (password == usernamePw) {
+                                alert('Selamat datang');
+                                props.navigation.navigate("Dashboard");
+
+                            } else {
+                                alert('salah password');
+                            }
+                        } else {
+                            alert('salah username');
+                        }
+                        console.log(usernamePw);
+                    });
+                });
+
+                //buat user
+                // db.transaction((tx) => {
+                //     tx.executeSql('INSERT INTO users (name,password) VALUES (?,?)', 
+                //     [masterUsername,masterPassword], (_, { insertId }) => {
+                //     console.log(`Data berhasil ditambahkan dengan ID: ${insertId}`);
+                //     });
+                // });
+
+                // cek user
+                // db.transaction((tx) => {
+                //     tx.executeSql('SELECT * FROM users', [], (_, { rows }) => {
+                //     const data = [];
+                //     const len = rows.item(0).name;
+                //     console.log(len);
+                //     });
+                // });
+            }
+        }
+    };
+
+
+
+
     const [fontsLoaded, fontError] = useFonts({
         'OpenSans-Bold': require('./../assets/fonts/OpenSans-Bold.ttf'),
         'OpenSans-SemiBold': require('./../assets/fonts/OpenSans-SemiBold.ttf'),
@@ -39,15 +98,8 @@ function Logins({ navigation }) {
     if (!fontsLoaded && !fontError) {
         return null;
     }
-    const handleLogin = () => {
-        if (username === 'yourUsername' && password === 'yourPassword') {
-            // Successful login
-            alert('Login successful!');
-        } else {
-            // Failed login
-            alert('Login failed. Please check your credentials.');
-        }
-    }
+
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>
@@ -59,7 +111,7 @@ function Logins({ navigation }) {
             <TextInput
                 style={styles.input}
                 placeholder="Masukkan Email/Username"
-                onChangeText={(text) => setUsername(text)}
+                onChangeText={setUsername}
                 value={username}
             />
             <Text style={styles.label}>
@@ -68,13 +120,17 @@ function Logins({ navigation }) {
             <TextInput
                 style={styles.input}
                 placeholder="Masukkan Password"
-                onChangeText={(text) => setPassword(text)}
+                onChangeText={setPassword}
                 value={password}
                 secureTextEntry={true}
             />
-            <Pressable style={styles.button} onPress={() => navigation.navigate('Dashboard')}>
-                <Text style={styles.text}>Login</Text>
-            </Pressable>
+            <TouchableOpacity onPress={() => login()}
+                style={styles.button}
+            >
+                <Text style={styles.text}>
+                Login
+                </Text>
+            </TouchableOpacity>
         </View>
     );
 }

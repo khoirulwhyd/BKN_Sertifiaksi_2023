@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: 'OpenSans-Bold',
         marginTop: 15,
-        marginVertical: 10
+        marginVertical: 10,
     },
     Card1: {
         flexDirection: 'row',
