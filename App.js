@@ -12,6 +12,7 @@ import Pemasukkan from './screen/Pemasukkan';
 import Pengeluaran from './screen/Pengeluaran';
 import DetailCash from './screen/DetailCash';
 import Setting from './screen/Setting';
+import Tester from './screen/Tester';
 
 function HomeScreen({ navigation }) {
   const [fontsLoaded, fontError] = useFonts({
@@ -74,6 +75,7 @@ function App() {
         <Stack.Screen name="Pengeluaran" component={Pengeluaran} />
         <Stack.Screen name="DetailCash" component={DetailCash} />
         <Stack.Screen name="Setting" component={Setting} />
+        <Stack.Screen name="Tester" component={Tester} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -50,6 +50,9 @@ function Logins({ navigation }) {
     }
     return (
         <View style={styles.container}>
+            <Text style={styles.title}>
+                Login ke akun anda
+            </Text>
             <Text style={styles.label}>
                 Username/Email
             </Text>
@@ -89,6 +92,11 @@ function App() {
     );
 }
 const styles = StyleSheet.create({
+    title: {
+        padding: 8,
+        fontSize: 20,
+        fontFamily: 'OpenSans-Bold',
+    },
     label : {
         padding: 8,
         fontSize: 16,

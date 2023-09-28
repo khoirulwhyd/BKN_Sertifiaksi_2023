@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import {
     Text,
     View,
@@ -16,6 +16,8 @@ import { useCallback } from 'react';
 import { useFonts } from 'expo-font';
 import { AntDesign } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
+
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
@@ -23,11 +25,68 @@ import { useNavigation } from '@react-navigation/native';
 import Grafik from './../assets/Grafik.png';
 import Constants from 'expo-constants';
 
+import * as SQLite from 'expo-sqlite';
+import Moment from 'moment';
+
+const db = SQLite.openDatabase('db.sqlite');
 
 //import Page
 import Pemasukkan from "./Pemasukkan";
 
 function Dashboards({ navigation, iconName, title, description, onPress }) {
+    const [masuk, setMasuk] = useState('');
+    const [keluar, setKeluar] = useState('');
+    const [saldo, setSaldo] = useState('');
+    Moment.locale('id');
+    var dt = new Date();
+    var bulan = Moment(dt).format('M');
+    var ini = Moment(dt).format('MMMM');
+    const [date, setDate] = useState(new Date());
+
+    useEffect(() => {
+        // Membuat tabel jika belum ada
+        db.transaction((tx) => {
+            tx.executeSql(
+                'CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT,tanggal TEXT,nominal TEXT,tipe TEXT,bulan TEXT)'
+            );
+        });
+
+
+        // Mengambil data dari database saat aplikasi dimuat
+        fetchMasuk();
+        fetchKeluar();
+        saldoGet();
+    }, []);
+
+    const fetchMasuk = () => {
+        db.transaction((tx) => {
+            tx.executeSql('SELECT sum(nominal) as nominal FROM items WHERE tipe = "masuk" AND bulan = ?', [bulan], (_, { rows }) => {
+                const len = rows.item(0).nominal;
+                console.log(`Data masuk: ${len}`);
+                setMasuk(len);
+            });
+        });
+    };
+
+    const fetchKeluar = () => {
+        db.transaction((tx) => {
+            tx.executeSql('SELECT sum(nominal) as nominal FROM items WHERE tipe = "keluar" AND  bulan = ?', [bulan], (_, { rows }) => {
+                const len = rows.item(0).nominal;
+                console.log(`Data keluar: ${len}`);
+                setKeluar(len);
+            });
+        });
+    };
+
+    const saldoGet = () => {
+        fetchMasuk();
+        fetchKeluar();
+        let oke = masuk - keluar;
+        console.log(oke);
+        setSaldo(oke);
+    };
+
+
 
     const [fontsLoaded, fontError] = useFonts({
         'OpenSans-Bold': require('./../assets/fonts/OpenSans-Bold.ttf'),
@@ -60,21 +119,57 @@ function Dashboards({ navigation, iconName, title, description, onPress }) {
                     <Ionicons name="ios-settings" size={24} color="white" onPress={() => navigation.navigate('Setting')} />
                 </View>
             </View>
-            <Text style={styles.label}> Rangkuman Pemasukkan Bulan Ini</Text>
+            <View style={styles.flexTitle}>
+                <View style={styles.icons}>
+                    <FontAwesome name="bar-chart-o" size={20} color="#0750B5" />
+                </View>
+                <View style={styles}>
+                    <Text style={styles.titleContainer}>
+                        Rangkuman Bulan {ini}
+                    </Text>
+                </View>
+            </View>
+            {/* <Text style={styles.label}> Rangkuman Pemasukkan Bulan Ini</Text> */}
             <View style={styles.Card1}>
                 
                 <Image
                     style={styles.image}
                     source={Grafik}
-                    // placeholder={blurhash}
                     contentFit="cover"
                     transition={1000}
                 />
-                <Text style={{ alignContent: 'center', textAlign: 'center', fontFamily: 'OpenSans-Regular', color: 'green' }}>Pengeluaran : Rp. 20.000</Text>
-                <Text style={{ alignContent: 'center', textAlign: 'center', fontFamily: 'OpenSans-Regular', color: 'red' }}>Pemasukkan : Rp. 20.000</Text>
+                {/* <Text style={{ alignContent: 'center', textAlign: 'center', fontFamily: 'OpenSans-Regular', color: 'green' }}>Pengeluaran : Rp. 20.000</Text>
+                <Text style={{ alignContent: 'center', textAlign: 'center', fontFamily: 'OpenSans-Regular', color: 'red' }}>Pemasukkan : Rp. 20.000</Text> */}
+                <View style={styles.flexTitle}>
+                    <View style={styles.titleMenu}>
+                        <Text style={{ alignContent: 'center', textAlign: 'center', fontFamily: 'OpenSans-Regular', color: 'red', fontSize:12, }}>
+                            Pengeluaran : Rp. {parseInt(keluar).toLocaleString()}
+                        </Text>
+                    </View>
+                    <View style={styles}>
+                        <Text style={{ alignContent: 'center', textAlign: 'center', fontFamily: 'OpenSans-Regular', color: 'green', fontSize: 12, }}>
+                            Pemasukan : Rp. {parseInt(masuk).toLocaleString()}
+                        </Text>
+                    </View>
+                </View>
+                <View style={styles}>
+                    <Text style={{ alignContent: 'center', textAlign: 'center', fontFamily: 'OpenSans-Bold', color: 'gray', fontSize: 14, }}>
+                        Saldo : Rp. {parseInt(saldo).toLocaleString()}
+                    </Text>
+                </View>
             </View>
             
-            <Text style={styles.label}> Menu lainnya</Text>
+            <View style={styles.flexTitle}>
+                <View style={styles.icons}>
+                    <MaterialIcons name="menu-book" size={20} color="#0750B5" />
+                </View>
+                <View style={styles}>
+                    <Text style={styles.titleContainer}>
+                        Menu Lainnya
+                    </Text>
+                </View>
+            </View>
+
             <TouchableOpacity onPress={() => navigation.navigate('Pemasukkan')}>
                 <View style={styles.cardFlex}>
                     <View style={styles.icons}>
@@ -84,6 +179,9 @@ function Dashboards({ navigation, iconName, title, description, onPress }) {
                         <Text style={styles.titleMenu}>
                             Tambah Pemasukkan
                         </Text>                       
+                    </View>
+                    <View style={styles.righticon}>
+                        <MaterialIcons name="keyboard-arrow-right" size={24} color="black" />
                     </View>
                 </View>
             </TouchableOpacity>
@@ -97,6 +195,9 @@ function Dashboards({ navigation, iconName, title, description, onPress }) {
                             Tambah Pengeluaran
                         </Text>
                     </View>
+                    <View style={styles.righticon}>
+                        <MaterialIcons name="keyboard-arrow-right" size={24} color="black" />
+                    </View>
                 </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('DetailCash')}>
@@ -108,6 +209,9 @@ function Dashboards({ navigation, iconName, title, description, onPress }) {
                         <Text style={styles.titleMenu}>
                             Detail Cash Flow
                         </Text>
+                    </View>
+                    <View style={styles.righticon1}>
+                        <MaterialIcons name="keyboard-arrow-right" size={24} color="black" />
                     </View>
                 </View>
             </TouchableOpacity>
@@ -127,17 +231,39 @@ function App() {
 }
 
 const styles = StyleSheet.create({
+    titleContainer: {
+        fontSize: 12,
+        alignContent: 'center',
+        justifyContent: 'flex-start',
+        fontFamily: 'OpenSans-Bold',
+        color: '#555555',
+        textAlign: 'auto',
+    },
     titleMenu: {
         alignContent: 'center',
         justifyContent: 'flex-start',
         fontFamily: 'OpenSans-SemiBold',
         color: '#555555',
-        textAlign: 'auto'
+        textAlign: 'auto',
     },
     icons: {
         alignContent: 'center',
         justifyContent: 'center',
         textAlign: 'left',
+        paddingHorizontal: 10,
+    },
+    righticon: {
+        alignContent: 'right',
+        justifyContent: 'flex-end',
+        textAlign: 'right',
+        marginLeft: 70,
+        paddingHorizontal: 10,
+    },
+    righticon1: {
+        alignContent: 'right',
+        justifyContent: 'flex-end',
+        textAlign: 'right',
+        marginLeft: 105,
         paddingHorizontal: 10,
     },
     headerText: {
@@ -172,6 +298,19 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0 },
         elevation: 1,
     },
+
+    flexTitle: {
+        gap: 3,
+        flexDirection: 'row',
+        backgroundColor: '',
+        height: 40,
+        width: 'full',
+        
+        marginBottom: 1,
+        alignItems: 'center',
+        justifyContent: 'left',
+    },
+
     cardFlex: {
         gap: 3,
         flexDirection: 'row',
